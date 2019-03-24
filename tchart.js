@@ -253,7 +253,6 @@ var TChart = (function () {
         textColor: '#96A2AA',
       },
       xAxis: {
-        lineColor: '##F2F4F5',
         textColor: '#96A2AA',
       }
     }
@@ -270,7 +269,7 @@ var TChart = (function () {
         handlerWidth: 10,
         border: 4,
         maskColor: '#1F2A38',
-        borderColor: 'rgba(123,123,123,0.5)',
+        borderColor: 'rgba(64,87,106,1)',
       },
       Line: {
         linejoin: 'round',
@@ -293,11 +292,10 @@ var TChart = (function () {
       },
       yAxis: {
         lineColor: '#293544',
-        textColor: '#96A2AA',
+        textColor: '#546778',
       },
       xAxis: {
-        lineColor: '#293544',
-        textColor: '#96A2AA',
+        textColor: '#546778',
       }
     }
   };
@@ -640,32 +638,11 @@ var TChart = (function () {
       }
 
       this._timer = setTimeout(function () {
-        this$1._recalc();
-        this$1.render();
+        this$1._recalc(false);
+        this$1._render();
         this$1._timer = null;
         clearTimeout(this$1._timer);
       }, 100);
-
-      // animate({
-      //   duration: 500,
-      //   timing: (timeFraction) => {
-      //     return timeFraction;
-      //   },
-      //   draw: (progress) => {
-      //     if(this.progress) {
-      //       this._recalc()
-      //       this.render();
-      //     }
-      //     // this._container.attr('transform', `translate(0 ${-top})`);
-
-      //     // if(progress >= 1) {
-      //     //   // this._container.style('visibility', 'hidden');
-      //     //   this._lines[id].changeVisible(isVisible);
-      //     // }
-      //   }
-      // });
-
-      // let data = this._data.reduce((a, s) => a.concat(s), []);
 
     };
 
@@ -682,7 +659,7 @@ var TChart = (function () {
       });
     };
 
-    PlotArea.prototype.render = function render () {
+    PlotArea.prototype._render = function _render (force) {
       var this$1 = this;
 
       // wait sync array length
@@ -694,11 +671,7 @@ var TChart = (function () {
       }
 
       forEach(this._lines, function (line, id) {
-        // if(!this._state.data[id].visible) {
-          // return;
-        // }
-
-        if(this$1._animateQueue[id]) {
+        if(force && this$1._animateQueue[id]) {
           return;
         }
 
@@ -711,8 +684,6 @@ var TChart = (function () {
           },
           draw: function (progress) {
             var offset = this$1._prevMaxValue - this$1._maxValue;
-            // this._lines[id]._container.style('opacity', 1 - (progress < 0 ? 0 : progress));
-            // this.viewbox.height = saved - saved * progress;
 
             line.redraw({
               points: this$1._state.data[id].data,
@@ -720,26 +691,17 @@ var TChart = (function () {
               min: this$1._minValue,
               viewbox: this$1._layout._viewbox,
             });
-            // this._container.attr('transform', `translate(0 ${-top})`);
 
-            // if(progress >= 1) {
-            //   // this._container.style('visibility', 'hidden');
-            //   this._lines[id].changeVisible(isVisible);
-            // }
             if(progress >= 1) {
               this$1._animateQueue[id] = false;
             }
           }
         });
-
-
-        // line.redraw({
-        //   points: this._state.data[id].data,
-        //   max: this._maxValue,
-        //   min: this._minValue,
-        //   viewbox: this._layout._viewbox
-        // });
       });
+    };
+
+    PlotArea.prototype.render = function render () {
+      this._render(true);
     };
 
     return PlotArea;
@@ -785,6 +747,7 @@ var TChart = (function () {
       }
 
       items.forEach(function (i) {
+        console.log(i);
         i.label.attr('stroke', this$1._state.theme.yAxis.textColor);
         i.line.attr('stroke', this$1._state.theme.yAxis.lineColor);
       });
@@ -923,7 +886,7 @@ var TChart = (function () {
       this._state = state;
       this._container = new Element('g');
 
-      this._height = 400;
+      this._height = 375;
 
       watch(state, {
         data: this._changeData.bind(this),
@@ -937,8 +900,10 @@ var TChart = (function () {
     xAxis.prototype = Object.create( Control && Control.prototype );
     xAxis.prototype.constructor = xAxis;
 
-    xAxis.prototype._changeTheme = function _changeTheme () {
-
+    xAxis.prototype._changeTheme = function _changeTheme (n) {
+      this._labels.forEach(function (label) {
+        label.label.attr('stroke', n.xAxis.textColor);
+      });
     };
 
     xAxis.prototype._changeData = function _changeData (points) {
@@ -947,13 +912,13 @@ var TChart = (function () {
       this._saved = onePart;
 
       for(var i = 0; i < 6; i++) {
-        // console.log(dateFormat(new Date(points[0] + i * onePart)));
         var date = dateFormat(new Date(points[0] + i * onePart));
         if(!this._labels[i]) {
           var label = new Element('text', {
             stroke: this._state.theme.xAxis.textColor,
             fontSize: 12,
             fontWeight: 100,
+            alignmentBaseline: 'middle',
           });
           var container = new Element('g');
 
@@ -967,43 +932,17 @@ var TChart = (function () {
 
         }
 
-        var leftOffset = this._height / 6 * i;
+        var leftOffset = this._height / 6 * i + 10;
         this._labels[i].label.node.innerHTML = '';
         this._labels[i].label.node.appendChild(createTextNode(date));
         this._labels[i].container.attr('transform', ("translate(" + leftOffset + " 0)"));
 
       }
-      console.log('___');
-
-
-      // for(let i = 0; i < 6; i++) {
-      //   let leftOffset = this._height / 6 * i;
-      //   console.log(i * offset);
-      //   let date = new Date(points[i * offset]);
-      //   let label = new Element('text', {
-      //     stroke: '#96A2AA',
-      //     fontSize: 12,
-      //     fontWeight: 100,
-      //   });
-      //   let container = new Element('g', {
-      //     transform: `translate(${leftOffset})`
-      //   });
-
-      //   label.node.appendChild(createTextNode(dateFormat(date)));
-
-      //   label.mount(container);
-
-      //   container.mount(this._container);
-      // }
-      // console.log('___')
-
-
-
     };
 
     xAxis.prototype.mount = function mount (to) {
       this._container.mount(to);
-      this._container.attr('transform', 'translate(0 410)');
+      this._container.attr('transform', 'translate(15 420)');
     };
 
     xAxis.prototype.render = function render () {
@@ -1959,7 +1898,7 @@ var TChart = (function () {
 
     // plotLayout.push(new Navigator());
     plot.layout.position({top: 20});
-    navigator.layout.position({top: 440, left: 10});
+    navigator.layout.position({top: 460, left: 10});
 
     this._root.push(navigator.layout);
     this._root.push(plot.layout);
